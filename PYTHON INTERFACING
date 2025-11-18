@@ -1,1 +1,78 @@
+from tkinter import Tk, Canvas, Button
+from PIL import Image, ImageTk
+import webbrowser
+import serial
+import time
+
+BRAKE_VIDEO_URL = "https://www.youtube.com/watch?v=YOUR_BRAKE_VIDEO"
+ENGINE_VIDEO_URL = "https://www.youtube.com/watch?v=YOUR_ENGINE_VIDEO"
+
+try:
+    ser = serial.Serial('COM4', 9600)
+    time.sleep(2)
+except:
+    ser = None
+    print("Arduino not connected.")
+
+current_temp = 0
+current_vibration = 0
+
+def handle_brake():
+    if current_vibration == 1:
+        webbrowser.open(BRAKE_VIDEO_URL)
+
+def handle_engine():
+    if current_temp > 30:
+        webbrowser.open(ENGINE_VIDEO_URL)
+
+root = Tk()
+root.title("Vehicle SCADA Dashboard")
+root.geometry("600x710")
+
+bg_image = Image.open("IMG1.png")
+bg_photo = ImageTk.PhotoImage(bg_image)
+
+canvas = Canvas(root, width=bg_image.width, height=bg_image.height)
+canvas.pack()
+canvas.create_image(0, 0, anchor="nw", image=bg_photo)
+
+brake_button = Button(
+    root, text="BRAKE", bg="lightgray", fg="black", font=("Arial", 10, "bold"),
+    command=handle_brake
+)
+brake_button.place(x=595, y=92, width=85, height=70)
+
+engine_button = Button(
+    root, text="ENGINE", bg="lightgray", fg="black", font=("Arial", 10, "bold"),
+    command=handle_engine
+)
+engine_button.place(x=750, y=590, width=180, height=80)
+
+def update_dashboard():
+    global current_temp, current_vibration
+    if ser:
+        try:
+            line = ser.readline().decode().strip()
+            if "," in line:
+                temp, vib = line.split(",")
+                current_temp = float(temp)
+                current_vibration = int(vib)
+
+                if current_temp > 30:
+                    engine_button.config(bg="red")
+                else:
+                    engine_button.config(bg="lightgreen")
+
+                if current_vibration == 1:
+                    brake_button.config(bg="red")
+                else:
+                    brake_button.config(bg="lightgreen")
+
+        except Exception as e:
+            print("Error reading serial:", e)
+
+    root.after(1000, update_dashboard)
+
+update_dashboard()
+root.mainloop()
 
