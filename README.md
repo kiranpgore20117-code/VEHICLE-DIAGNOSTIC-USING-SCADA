@@ -45,5 +45,3 @@ Data exchange between SCADA tags and Python enables:<br>
 •	Real-time updates<br>
 •	Logging of fault history<br>
 
-
-
